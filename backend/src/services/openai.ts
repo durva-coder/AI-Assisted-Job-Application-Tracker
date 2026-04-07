@@ -100,6 +100,8 @@ export const parseJobDescription = async (
     });
 
     const content = response.choices[0]?.message?.content;
+    console.log("content of gemini:: ", content);
+    
     if (!content) {
       throw new Error('No response from Gemini API');
     }
