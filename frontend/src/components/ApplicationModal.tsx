@@ -1,8 +1,9 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { applicationApi, aiApi } from '../api';
+import { isRateLimitError, getErrorMessage } from '../api/client';
 import type { Application } from '../types';
-import { X, Copy, Check, Sparkles, Loader2, Trash2 } from 'lucide-react';
+import { X, Copy, Check, Sparkles, Loader2, Trash2, AlertCircle } from 'lucide-react';
 
 interface ApplicationModalProps {
   application: Application | null;
@@ -40,6 +41,7 @@ export function ApplicationModal({
   const [niceSkillsInput, setNiceSkillsInput] = useState('');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: (data: Partial<Application>) => {
@@ -98,6 +100,7 @@ export function ApplicationModal({
   const handleGenerateSuggestions = async () => {
     if (!form.role.trim()) return;
     setGeneratingSuggestions(true);
+    setApiError(null);
     try {
       const jd = form.notes || `${form.role} at ${form.company}`;
       const result = await aiApi.getResumeSuggestions(
@@ -109,8 +112,14 @@ export function ApplicationModal({
         ...prev,
         resumeSuggestions: result.suggestions,
       }));
-    } catch {
-      // Keep existing suggestions on error
+    } catch (error) {
+      if (isRateLimitError(error)) {
+        const message = getErrorMessage(error);
+        setApiError(`⚠️ OpenAI API Rate Limit: ${message}. Please check your plan and billing details, or try again later.`);
+      } else {
+        setApiError('Failed to generate suggestions. Please try again.');
+      }
+      setTimeout(() => setApiError(null), 10000);
     } finally {
       setGeneratingSuggestions(false);
     }
@@ -155,6 +164,23 @@ export function ApplicationModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* API Error Alert */}
+          {apiError && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-red-800 dark:text-red-300">{apiError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApiError(null)}
+                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

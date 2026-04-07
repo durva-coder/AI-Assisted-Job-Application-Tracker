@@ -29,4 +29,21 @@ api.interceptors.response.use(
   }
 );
 
+// Helper function to check if error is a rate limit error
+export const isRateLimitError = (error: any): boolean => {
+  return error.response?.status === 429 || 
+         error.response?.data?.type === 'rate_limit';
+};
+
+// Helper function to get error message
+export const getErrorMessage = (error: any): string => {
+  if (error.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error.response?.data?.error) {
+    return error.response.data.error;
+  }
+  return error.message || 'An unexpected error occurred';
+};
+
 export default api;

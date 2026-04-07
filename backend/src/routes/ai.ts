@@ -25,8 +25,27 @@ router.post(
       const parsed = await parseJobDescription(jobDescription);
 
       res.json({ parsed });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Parse JD error:', error);
+      
+      // Handle rate limit errors
+      if (error.type === 'rate_limit') {
+        return res.status(429).json({ 
+          error: 'OpenAI API rate limit exceeded',
+          message: error.message,
+          type: 'rate_limit'
+        });
+      }
+      
+      // Handle authentication errors
+      if (error.type === 'auth_error') {
+        return res.status(500).json({ 
+          error: 'OpenAI API configuration error',
+          message: error.message,
+          type: 'auth_error'
+        });
+      }
+      
       res.status(500).json({ error: 'Failed to parse job description' });
     }
   }
@@ -54,8 +73,27 @@ router.post(
       );
 
       res.json({ suggestions: suggestions.suggestions });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Resume suggestions error:', error);
+      
+      // Handle rate limit errors
+      if (error.type === 'rate_limit') {
+        return res.status(429).json({ 
+          error: 'OpenAI API rate limit exceeded',
+          message: error.message,
+          type: 'rate_limit'
+        });
+      }
+      
+      // Handle authentication errors
+      if (error.type === 'auth_error') {
+        return res.status(500).json({ 
+          error: 'OpenAI API configuration error',
+          message: error.message,
+          type: 'auth_error'
+        });
+      }
+      
       res.status(500).json({ error: 'Failed to generate resume suggestions' });
     }
   }

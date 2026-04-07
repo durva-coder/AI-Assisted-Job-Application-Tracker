@@ -29,7 +29,7 @@ export const parseJobDescription = async (
         {
           role: 'system',
           content: `You are a job description parser. Extract the following information from the job description and return ONLY valid JSON. If a field cannot be determined, use an empty string for strings or empty array for arrays.
-          
+
 Return ONLY a JSON object with this exact structure:
 {
   "company": "company name or empty string",
@@ -69,8 +69,28 @@ Return ONLY a JSON object with this exact structure:
     }
 
     return parsed;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error parsing job description:', error);
+    
+    // Check for OpenAI rate limit error (429)
+    if (error.status === 429) {
+      const errorMessage = error.error?.message || 'You exceeded your current quota';
+      throw {
+        status: 429,
+        message: errorMessage,
+        type: 'rate_limit'
+      };
+    }
+    
+    // Check for authentication error (401)
+    if (error.status === 401) {
+      throw {
+        status: 401,
+        message: 'Invalid OpenAI API key. Please check your configuration.',
+        type: 'auth_error'
+      };
+    }
+    
     throw new Error('Failed to parse job description');
   }
 };
@@ -129,8 +149,28 @@ Return ONLY a JSON object with this exact structure:
     }
 
     return parsed;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating resume suggestions:', error);
+    
+    // Check for OpenAI rate limit error (429)
+    if (error.status === 429) {
+      const errorMessage = error.error?.message || 'You exceeded your current quota';
+      throw {
+        status: 429,
+        message: errorMessage,
+        type: 'rate_limit'
+      };
+    }
+    
+    // Check for authentication error (401)
+    if (error.status === 401) {
+      throw {
+        status: 401,
+        message: 'Invalid OpenAI API key. Please check your configuration.',
+        type: 'auth_error'
+      };
+    }
+    
     throw new Error('Failed to generate resume suggestions');
   }
 };

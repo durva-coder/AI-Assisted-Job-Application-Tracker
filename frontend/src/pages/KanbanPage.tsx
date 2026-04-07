@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { applicationApi, aiApi } from '../api';
+import { isRateLimitError, getErrorMessage } from '../api/client';
 import type { Application, ApplicationStatus, ParsedJobDescription } from '../types';
 import { KanbanColumn } from '../components/KanbanColumn';
 import { ApplicationModal } from '../components/ApplicationModal';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, AlertCircle } from 'lucide-react';
 
 const COLUMNS: { id: ApplicationStatus; title: string; color: string }[] = [
   { id: 'Applied', title: 'Applied', color: 'bg-blue-500' },
@@ -22,6 +23,7 @@ export function KanbanPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [parseJdOpen, setParseJdOpen] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['applications'],
@@ -117,10 +119,37 @@ export function KanbanPage() {
     } as Application);
     setModalOpen(true);
     setParseJdOpen(false);
+    setApiError(null);
+  };
+
+  const handleApiError = (error: unknown) => {
+    if (isRateLimitError(error)) {
+      const message = getErrorMessage(error);
+      setApiError(`⚠️ OpenAI API Rate Limit: ${message}. Please check your plan and billing details, or try again later.`);
+    } else {
+      setApiError('An error occurred. Please try again.');
+    }
+    setTimeout(() => setApiError(null), 10000);
   };
 
   return (
     <div>
+      {/* API Error Alert */}
+      {apiError && (
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3 animate-pulse">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-red-800 dark:text-red-300 font-medium">{apiError}</p>
+          </div>
+          <button
+            onClick={() => setApiError(null)}
+            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Job Applications
@@ -226,6 +255,7 @@ export function KanbanPage() {
         <ParseJDModal
           onClose={() => setParseJdOpen(false)}
           onParsed={handleJDParsed}
+          onError={handleApiError}
         />
       )}
     </div>
@@ -235,9 +265,10 @@ export function KanbanPage() {
 interface ParseJDModalProps {
   onClose: () => void;
   onParsed: (parsed: ParsedJobDescription & { jobDescription: string }) => void;
+  onError: (error: unknown) => void;
 }
 
-function ParseJDModal({ onClose, onParsed }: ParseJDModalProps) {
+function ParseJDModal({ onClose, onParsed, onError }: ParseJDModalProps) {
   const [jobDescription, setJobDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -254,8 +285,9 @@ function ParseJDModal({ onClose, onParsed }: ParseJDModalProps) {
     try {
       const result = await aiApi.parseJobDescription(jobDescription);
       onParsed({ ...result.parsed, jobDescription });
-    } catch {
-      setError('Failed to parse job description. Please try again.');
+    } catch (err) {
+      onError(err);
+      onClose();
     } finally {
       setIsLoading(false);
     }
