@@ -2,6 +2,14 @@
 
 A full-stack web application for tracking job applications using a Kanban board, with AI-powered job description parsing and resume suggestion generation.
 
+## 🚀 Quick Deploy
+
+Want to deploy quickly? Check our deployment guides:
+
+- **Docker**: `docker-compose up -d` (one command deployment)
+- **Cloud Platforms**: Render, Railway, Vercel, Netlify
+- See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete instructions
+
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Tailwind CSS, Vite
@@ -89,6 +97,44 @@ The frontend will start on `http://localhost:5173` and proxy API requests to the
 ### 4. Open the app
 
 Navigate to `http://localhost:5173` in your browser.
+
+## 🐳 Docker Deployment
+
+The easiest way to deploy the entire stack:
+
+```bash
+# Start all services (MongoDB, Backend, Frontend)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+Access the app at `http://localhost` (frontend) and `http://localhost:5000` (backend API).
+
+## ☁️ Cloud Deployment
+
+For production deployment to cloud platforms, see our comprehensive [DEPLOYMENT.md](./DEPLOYMENT.md) guide covering:
+
+- **Render**: Free tier available, easy setup
+- **Railway**: One-click deployment from GitHub
+- **Vercel**: Deploy frontend with global CDN
+- **Netlify**: Alternative frontend hosting
+- **MongoDB Atlas**: Free cloud database (512MB)
+
+### Quick Production Checklist
+
+1. ✅ Set up MongoDB Atlas (free tier)
+2. ✅ Deploy backend to Render/Railway
+3. ✅ Deploy frontend to Vercel/Netlify
+4. ✅ Configure CORS with your frontend URL
+5. ✅ Use strong JWT_SECRET (32+ characters)
+6. ✅ Add OpenAI API key (optional)
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for step-by-step instructions.
 
 ## Project Structure
 
